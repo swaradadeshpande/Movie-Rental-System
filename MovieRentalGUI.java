@@ -63,7 +63,6 @@ public class MovieRentalGUI extends JFrame {
                 + "</body></html>");
         sidebar.add(logo);
 
-        // Sidebar Buttons now use the ACCENT_BLUE
         sidebar.add(createMenuButton("Rent Movie", e -> handleRent()));
         sidebar.add(createMenuButton("Return Movie", e -> handleReturn()));
         sidebar.add(createMenuButton("History Logs", e -> handleHistory()));
@@ -106,9 +105,12 @@ public class MovieRentalGUI extends JFrame {
         searchField.setBorder(BorderFactory.createCompoundBorder(
             new LineBorder(new Color(200, 200, 200), 1), new EmptyBorder(5, 12, 5, 12)));
         
+        // Triggers search when Enter is pressed in the field
+        searchField.addActionListener(e -> refreshTable(searchField.getText()));
+
         JButton sBtn = new JButton("Search");
         sBtn.setPreferredSize(new Dimension(100, 40));
-        sBtn.setBackground(ACCENT_BLUE); // Now all buttons are color-synced
+        sBtn.setBackground(ACCENT_BLUE); 
         sBtn.setForeground(Color.WHITE);
         sBtn.setOpaque(true);
         sBtn.setBorderPainted(false);
@@ -159,7 +161,6 @@ public class MovieRentalGUI extends JFrame {
             }
         });
 
-        // Column Headers visibility fix
         JTableHeader header = movieTable.getTableHeader();
         header.setBackground(HEADER_BG);
         header.setForeground(Color.WHITE);
@@ -171,12 +172,18 @@ public class MovieRentalGUI extends JFrame {
         return scroll;
     }
 
-    // --- CONNECTED BACKEND METHODS ---
-
+    // --- UPDATED REFRESH METHOD ---
     private void refreshTable(String query) {
         tableModel.setRowCount(0);
+        String lowerQuery = query.toLowerCase();
+
         for (Movie m : MovieRentalSystem.movies.values()) {
-            if (m.getTitle().toLowerCase().contains(query.toLowerCase())) {
+            // Check Title, Genre, OR Director (Matches console logic behavior)
+            boolean matchTitle = m.getTitle().toLowerCase().contains(lowerQuery);
+            boolean matchGenre = m.getGenre().toLowerCase().contains(lowerQuery);
+            boolean matchDirector = m.getDirector().toLowerCase().contains(lowerQuery);
+
+            if (matchTitle || matchGenre || matchDirector) {
                 tableModel.addRow(new Object[]{
                     m.getId(), m.getTitle(), m.getGenre(), m.getDirector(), m.getYear(),
                     m.isAvailable() ? "● Available" : "○ Rented"
@@ -208,7 +215,6 @@ public class MovieRentalGUI extends JFrame {
         String name = JOptionPane.showInputDialog(this, "Enter Customer Name:");
         if (name == null || name.trim().isEmpty()) return;
 
-        // Filter for ONLY rented items for this specific user
         List<Rental> activeRentals = MovieRentalSystem.rentals.stream()
                 .filter(r -> r.getUser().equalsIgnoreCase(name) && r.getStatus().equals("RENTED"))
                 .collect(Collectors.toList());
@@ -218,7 +224,6 @@ public class MovieRentalGUI extends JFrame {
             return;
         }
 
-        // --- RESTORED SELECTION MENU ---
         String[] options = activeRentals.stream()
                 .map(r -> r.getTxnId() + ": " + r.getMovieTitle())
                 .toArray(String[]::new);
